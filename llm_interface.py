@@ -235,89 +235,82 @@ class GeminiAdapter(LLMBase):
 
 
 # ---------------------------------------------------------------------------
-# Ollama  (pip install ollama  +  ollama server running locally or remotely)
+# Ollama  (no pip dependency — uses stdlib urllib against the REST API)
 # ---------------------------------------------------------------------------
 
 class OllamaAdapter(LLMBase):
+    """
+    Talks to Ollama via its REST API directly (no SDK).
+
+    This avoids the ollama Python SDK's Pydantic validation, which crashes
+    when models like Qwen3.5 return tool-call arguments as a JSON string
+    instead of a pre-parsed dict.
+    """
+
     def __init__(
         self,
         model: str = "qwen3.5:35b",
         temperature: float = 0.2,
         base_url: str | None = None,
     ):
-        try:
-            import ollama as _ollama
-        except ImportError:
-            raise ImportError("pip install ollama")
-        self._ollama = _ollama
-        if base_url:
-            self.client = _ollama.Client(host=base_url)
-        else:
-            self.client = _ollama.Client()
         self.model = model
         self.temperature = temperature
+        self.base_url = (base_url or "http://localhost:11434").rstrip("/")
 
     def chat(self, messages, tools=None) -> Message:
         import json as _json
+        import urllib.request
+        import urllib.error
 
-        kwargs: dict[str, Any] = dict(
-            model=self.model,
-            messages=messages,
-            options={"temperature": self.temperature},
-        )
-        # Pass tools in OpenAI-compatible format if provided
+        payload: dict[str, Any] = {
+            "model": self.model,
+            "messages": messages,
+            "stream": False,
+            "options": {"temperature": self.temperature},
+        }
         if tools:
-            kwargs["tools"] = [
+            payload["tools"] = [
                 {"type": "function", "function": t} for t in tools
             ]
 
-        resp = self.client.chat(**kwargs)
-
-        # Parse response — Ollama returns a ChatResponse object or dict
-        msg = resp.get("message", resp) if isinstance(resp, dict) else resp.message
-        content = msg.get("content", "") if isinstance(msg, dict) else getattr(msg, "content", "") or ""
-
-        # Parse tool calls — Ollama returns them in msg["tool_calls"] or msg.tool_calls
-        raw_tool_calls = (
-            msg.get("tool_calls", []) if isinstance(msg, dict)
-            else getattr(msg, "tool_calls", None) or []
+        data = _json.dumps(payload).encode("utf-8")
+        req = urllib.request.Request(
+            f"{self.base_url}/api/chat",
+            data=data,
+            headers={"Content-Type": "application/json"},
+            method="POST",
         )
+
+        try:
+            with urllib.request.urlopen(req, timeout=300) as resp:
+                raw = _json.loads(resp.read().decode("utf-8"))
+        except urllib.error.URLError as e:
+            raise RuntimeError(f"Ollama connection failed: {e}") from e
+
+        msg = raw.get("message", {})
+        content = msg.get("content", "") or ""
+
+        # Parse tool calls — arguments may be a string or already a dict
         tool_calls = []
-        for tc in raw_tool_calls:
-            # Ollama tool_call format: {"function": {"name": ..., "arguments": {...}}}
-            if isinstance(tc, dict):
-                fn = tc.get("function", tc)
-                name = fn.get("name", "")
-                args = fn.get("arguments", {})
-                if isinstance(args, str):
-                    try:
-                        args = _json.loads(args)
-                    except _json.JSONDecodeError:
-                        args = {"raw": args}
-            else:
-                # Object-style (ollama SDK response objects)
-                fn = getattr(tc, "function", tc)
-                name = getattr(fn, "name", "")
-                args = getattr(fn, "arguments", {})
-                if isinstance(args, str):
-                    try:
-                        args = _json.loads(args)
-                    except _json.JSONDecodeError:
-                        args = {"raw": args}
+        for tc in msg.get("tool_calls", []) or []:
+            fn = tc.get("function", {})
+            name = fn.get("name", "")
+            args = fn.get("arguments", {})
+            if isinstance(args, str):
+                try:
+                    args = _json.loads(args)
+                except _json.JSONDecodeError:
+                    args = {"raw": args}
             tool_calls.append({
                 "id": f"ollama_{name}_{len(tool_calls)}",
                 "name": name,
                 "args": args,
             })
 
-        # Extract token usage
+        # Token usage
         usage = None
-        if isinstance(resp, dict):
-            prompt_tokens = resp.get('prompt_eval_count', 0) or 0
-            completion_tokens = resp.get('eval_count', 0) or 0
-        else:
-            prompt_tokens = getattr(resp, 'prompt_eval_count', 0) or 0
-            completion_tokens = getattr(resp, 'eval_count', 0) or 0
+        prompt_tokens = raw.get("prompt_eval_count", 0) or 0
+        completion_tokens = raw.get("eval_count", 0) or 0
         if prompt_tokens or completion_tokens:
             usage = TokenUsage(
                 prompt_tokens=prompt_tokens,
@@ -331,7 +324,6 @@ class OllamaAdapter(LLMBase):
             tool_calls=tool_calls,
             usage=usage,
         )
-
 
 
 # ---------------------------------------------------------------------------
