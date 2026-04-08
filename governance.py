@@ -130,7 +130,7 @@ class GovernanceGate:
             self._ToolCall = ToolCall
             logger.info("AutoHarness governance pipeline initialized (core mode)")
         except Exception as e:
-            logger.info("AutoHarness not available (%s) — using standalone governance", e)
+            logger.debug("AutoHarness not available (%s) — using standalone governance", e)
             self._pipeline = None
 
     def _build_deny_patterns(self) -> dict[str, list[re.Pattern]]:
