@@ -65,12 +65,19 @@ class BenchmarkTask:
         return asdict(self)
 
 
+HARD_TASKS_PATH = pathlib.Path("benchmarks/hard_tasks.json")
+
 def load_tasks(
     path: pathlib.Path | None = None,
     include_humaneval: bool = True,
     humaneval_count: int = 40,
 ) -> list[BenchmarkTask]:
     """Load benchmark tasks from JSON file, optionally including HumanEval.
+
+    Loads from three sources (all optional, degrade gracefully):
+      1. benchmarks/tasks.json         — original hand-crafted tasks
+      2. benchmarks/hard_tasks.json    — challenging debugging + data tasks
+      3. HumanEval (40 problems)       — code-gen tasks with real test suites
 
     Args:
         path:              Override path to tasks.json.
@@ -80,6 +87,7 @@ def load_tasks(
     p = path or TASKS_PATH
     tasks: list[BenchmarkTask] = []
 
+    # Source 1: base tasks
     if p.exists():
         with open(p, encoding="utf-8") as f:
             data = json.load(f)
@@ -87,6 +95,18 @@ def load_tasks(
     else:
         logger.error("Tasks file not found: %s", p)
 
+    # Source 2: hard tasks
+    if HARD_TASKS_PATH.exists():
+        try:
+            with open(HARD_TASKS_PATH, encoding="utf-8") as f:
+                hard_data = json.load(f)
+            hard_tasks = [BenchmarkTask.from_dict(t) for t in hard_data]
+            tasks = tasks + hard_tasks
+            logger.info("Loaded %d hard tasks", len(hard_tasks))
+        except Exception as e:
+            logger.warning("Hard tasks load failed: %s", e)
+
+    # Source 3: HumanEval
     if include_humaneval:
         try:
             from benchmarks.adapters.humaneval_adapter import load_humaneval_tasks

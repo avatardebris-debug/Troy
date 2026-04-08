@@ -1,0 +1,287 @@
+[
+  {
+    "id": "debug_logic_error",
+    "category": "debugging",
+    "difficulty": "medium",
+    "description": "The file 'sorter.py' contains a sorting function with a logic error — it claims to sort descending but actually sorts ascending. Fix the bug so that running 'python sorter.py' prints '[9, 7, 5, 3, 1]'.",
+    "setup": {
+      "files": {
+        "sorter.py": "def sort_descending(lst):\n    # Should sort largest first\n    return sorted(lst)\n\nif __name__ == '__main__':\n    result = sort_descending([3, 1, 9, 5, 7])\n    print(result)\n"
+      }
+    },
+    "checks": [
+      {"type": "file_exists", "path": "sorter.py"},
+      {"type": "shell_output_contains", "command": "python sorter.py", "text": "[9, 7, 5, 3, 1]"}
+    ],
+    "max_steps": 8,
+    "cleanup": ["sorter.py"]
+  },
+  {
+    "id": "debug_off_by_one",
+    "category": "debugging",
+    "difficulty": "medium",
+    "description": "The file 'counter.py' is supposed to count how many items in a list are greater than a threshold, but it has an off-by-one or comparison error. Running it should print 'Count: 3' for values [1, 5, 8, 2, 9, 3] with threshold 4. Fix the bug and verify it works.",
+    "setup": {
+      "files": {
+        "counter.py": "def count_above(values, threshold):\n    count = 0\n    for v in values:\n        if v >= threshold:  # BUG: should be strictly greater than\n            count += 1\n    return count\n\nif __name__ == '__main__':\n    result = count_above([1, 5, 8, 2, 9, 3], 4)\n    print(f'Count: {result}')\n"
+      }
+    },
+    "checks": [
+      {"type": "file_exists", "path": "counter.py"},
+      {"type": "shell_output_contains", "command": "python counter.py", "text": "Count: 3"}
+    ],
+    "max_steps": 8,
+    "cleanup": ["counter.py"]
+  },
+  {
+    "id": "debug_runtime_crash",
+    "category": "debugging",
+    "difficulty": "hard",
+    "description": "The file 'parser.py' crashes with a KeyError on certain inputs. Read the file, understand the crash, fix it so that running 'python parser.py' prints 'PASSED' for all test cases without errors.",
+    "setup": {
+      "files": {
+        "parser.py": "def get_user_city(user_dict):\n    return user_dict['address']['city']\n\ndef main():\n    users = [\n        {'name': 'Alice', 'address': {'city': 'NYC'}},\n        {'name': 'Bob'},\n        {'name': 'Carol', 'address': {'city': 'LA'}},\n        {'name': 'Dave', 'address': {}},\n    ]\n    results = []\n    for u in users:\n        try:\n            city = get_user_city(u)\n            results.append(city)\n        except (KeyError, TypeError):\n            results.append('Unknown')\n    assert results == ['NYC', 'Unknown', 'LA', 'Unknown'], f'Failed: {results}'\n    print('PASSED')\n\nif __name__ == '__main__':\n    main()\n"
+      }
+    },
+    "checks": [
+      {"type": "file_exists", "path": "parser.py"},
+      {"type": "shell_output_contains", "command": "python parser.py", "text": "PASSED"}
+    ],
+    "max_steps": 10,
+    "cleanup": ["parser.py"]
+  },
+  {
+    "id": "debug_three_bugs",
+    "category": "debugging",
+    "difficulty": "hard",
+    "description": "The file 'stats.py' has three separate bugs. Find all three and fix them so that 'python stats.py' prints 'All assertions passed'. Write a brief comment near each fix noting what was wrong.",
+    "setup": {
+      "files": {
+        "stats.py": "def mean(numbers):\n    return sum(numbers) / len(numbers)\n\ndef median(numbers):\n    s = sorted(numbers)\n    n = len(s)\n    mid = n // 2\n    if n % 2 == 0:\n        return (s[mid] + s[mid + 1]) / 2  # BUG: should be s[mid-1]\n    return s[mid]\n\ndef clamp(value, lo, hi):\n    if value < lo:\n        return lo\n    if value > hi:\n        return value  # BUG: should return hi\n    return value\n\ndef normalize(numbers):\n    mn = min(numbers)\n    mx = max(numbers)\n    return [(x - mn) / (mx - mn) for x in numbers]  # BUG: will crash on all-same list\n\nif __name__ == '__main__':\n    assert mean([1, 2, 3, 4, 5]) == 3.0\n    assert median([1, 2, 3, 4]) == 2.5\n    assert clamp(15, 0, 10) == 10\n    assert normalize([5, 5, 5]) == [0.0, 0.0, 0.0]\n    print('All assertions passed')\n"
+      }
+    },
+    "checks": [
+      {"type": "file_exists", "path": "stats.py"},
+      {"type": "shell_output_contains", "command": "python stats.py", "text": "All assertions passed"}
+    ],
+    "max_steps": 15,
+    "cleanup": ["stats.py"]
+  },
+  {
+    "id": "data_transform_csv",
+    "category": "data_transform",
+    "difficulty": "medium",
+    "description": "Read 'transactions.csv'. Write a Python script 'analyze.py' that: (1) calculates the total amount per category, (2) finds the category with the highest total, and (3) writes results to 'output.txt' in the format 'Winner: <category> with total <N>'. Run analyze.py to verify output.",
+    "setup": {
+      "files": {
+        "transactions.csv": "id,category,amount\n1,food,12.50\n2,transport,8.00\n3,food,25.00\n4,entertainment,45.00\n5,transport,12.00\n6,food,8.75\n7,entertainment,30.00\n8,transport,5.50\n"
+      }
+    },
+    "checks": [
+      {"type": "file_exists", "path": "analyze.py"},
+      {"type": "file_exists", "path": "output.txt"},
+      {"type": "file_contains", "path": "output.txt", "text": "food"},
+      {"type": "file_contains", "path": "output.txt", "text": "46.25"},
+      {"type": "shell_output_contains", "command": "python analyze.py", "text": "food"}
+    ],
+    "max_steps": 12,
+    "cleanup": ["transactions.csv", "analyze.py", "output.txt"]
+  },
+  {
+    "id": "data_transform_json_filter",
+    "category": "data_transform",
+    "difficulty": "medium",
+    "description": "Read 'products.json'. Write a script 'filter.py' that filters to only products where price < 20 AND rating >= 4.0, then writes them sorted by price ascending to 'cheap_good.json'. The output file should contain exactly the matching products as a JSON array.",
+    "setup": {
+      "files": {
+        "products.json": "[{\"id\": 1, \"name\": \"Pen\", \"price\": 1.99, \"rating\": 4.5}, {\"id\": 2, \"name\": \"Notebook\", \"price\": 8.99, \"rating\": 3.8}, {\"id\": 3, \"name\": \"Stapler\", \"price\": 15.00, \"rating\": 4.2}, {\"id\": 4, \"name\": \"Desk Lamp\", \"price\": 35.00, \"rating\": 4.7}, {\"id\": 5, \"name\": \"Tape\", \"price\": 3.50, \"rating\": 4.1}, {\"id\": 6, \"name\": \"Scissors\", \"price\": 6.00, \"rating\": 3.5}, {\"id\": 7, \"name\": \"Binder\", \"price\": 12.00, \"rating\": 4.3}]"
+      }
+    },
+    "checks": [
+      {"type": "file_exists", "path": "filter.py"},
+      {"type": "file_exists", "path": "cheap_good.json"},
+      {"type": "file_contains", "path": "cheap_good.json", "text": "Pen"},
+      {"type": "file_contains", "path": "cheap_good.json", "text": "Tape"},
+      {"type": "file_contains", "path": "cheap_good.json", "text": "Binder"},
+      {"type": "file_not_contains", "path": "cheap_good.json", "text": "Notebook"},
+      {"type": "file_not_contains", "path": "cheap_good.json", "text": "Desk Lamp"}
+    ],
+    "max_steps": 12,
+    "cleanup": ["products.json", "filter.py", "cheap_good.json"]
+  },
+  {
+    "id": "data_transform_log_parse",
+    "category": "data_transform",
+    "difficulty": "hard",
+    "description": "Read 'server.log'. Parse it to extract: (1) count of ERROR lines, (2) count of WARNING lines, (3) the timestamp of the first ERROR. Write a Python script 'log_analyzer.py' and output results to 'log_report.txt' with one metric per line.",
+    "setup": {
+      "files": {
+        "server.log": "2024-01-15 08:00:01 INFO  Server starting\n2024-01-15 08:00:05 INFO  Database connected\n2024-01-15 08:01:12 WARNING  Slow query detected (2.3s)\n2024-01-15 08:02:44 ERROR  Connection timeout to cache server\n2024-01-15 08:03:01 INFO  Retry successful\n2024-01-15 08:05:18 WARNING  Memory usage at 82%\n2024-01-15 08:07:33 ERROR  Disk write failed: /var/log/app.log\n2024-01-15 08:08:00 WARNING  CPU spike detected\n2024-01-15 08:09:15 ERROR  Unhandled exception in worker thread\n2024-01-15 08:10:00 INFO  Health check OK\n"
+      }
+    },
+    "checks": [
+      {"type": "file_exists", "path": "log_analyzer.py"},
+      {"type": "file_exists", "path": "log_report.txt"},
+      {"type": "file_contains", "path": "log_report.txt", "text": "3"},
+      {"type": "file_contains", "path": "log_report.txt", "text": "08:02:44"},
+      {"type": "shell_output_contains", "command": "python log_analyzer.py", "text": ""}
+    ],
+    "max_steps": 12,
+    "cleanup": ["server.log", "log_analyzer.py", "log_report.txt"]
+  },
+  {
+    "id": "multi_step_pipeline",
+    "category": "compound",
+    "difficulty": "hard",
+    "description": "Build a 3-stage data pipeline:\n1. 'stage1.py' reads 'raw.txt', strips blank lines and leading/trailing whitespace from each line, writes to 'clean.txt'\n2. 'stage2.py' reads 'clean.txt', converts each line to uppercase, writes to 'upper.txt'\n3. 'stage3.py' reads 'upper.txt', sorts lines alphabetically, writes to 'sorted.txt'\nRun all three stages in order. The final 'sorted.txt' must be verifiably correct.",
+    "setup": {
+      "files": {
+        "raw.txt": "  banana  \napple\n\n  cherry \ndate\n\n  elderberry\n"
+      }
+    },
+    "checks": [
+      {"type": "file_exists", "path": "stage1.py"},
+      {"type": "file_exists", "path": "stage2.py"},
+      {"type": "file_exists", "path": "stage3.py"},
+      {"type": "file_exists", "path": "sorted.txt"},
+      {"type": "file_contains", "path": "sorted.txt", "text": "APPLE"},
+      {"type": "file_contains", "path": "sorted.txt", "text": "BANANA"},
+      {"type": "shell_output_contains", "command": "python -c \"lines=open('sorted.txt').readlines(); print('OK' if lines[0].strip()=='APPLE' else 'FAIL')\"", "text": "OK"}
+    ],
+    "max_steps": 18,
+    "cleanup": ["stage1.py", "stage2.py", "stage3.py", "raw.txt", "clean.txt", "upper.txt", "sorted.txt"]
+  },
+  {
+    "id": "test_driven_development",
+    "category": "compound",
+    "difficulty": "hard",
+    "description": "The file 'test_validator.py' contains failing tests for a function 'validate_email(email)' that doesn't exist yet. Read the tests to understand the required behaviour, then implement 'validator.py' so that running 'python test_validator.py' prints 'ALL TESTS PASSED' with no assertion errors.",
+    "setup": {
+      "files": {
+        "test_validator.py": "import sys\ntry:\n    from validator import validate_email\nexcept ImportError:\n    print('ERROR: validator.py not found or validate_email not defined')\n    sys.exit(1)\n\ntests_passed = 0\ntests_failed = 0\n\ndef check(email, expected):\n    global tests_passed, tests_failed\n    result = validate_email(email)\n    if result == expected:\n        tests_passed += 1\n    else:\n        tests_failed += 1\n        print(f'FAIL: validate_email({email!r}) returned {result!r}, expected {expected!r}')\n\ncheck('user@example.com', True)\ncheck('user.name+tag@domain.co.uk', True)\ncheck('USER@EXAMPLE.COM', True)\ncheck('', False)\ncheck('notanemail', False)\ncheck('@nodomain.com', False)\ncheck('no@', False)\ncheck('spaces in@email.com', False)\ncheck('double@@at.com', False)\n\nif tests_failed == 0:\n    print('ALL TESTS PASSED')\nelse:\n    print(f'{tests_failed} TESTS FAILED')\n    sys.exit(1)\n"
+      }
+    },
+    "checks": [
+      {"type": "file_exists", "path": "validator.py"},
+      {"type": "file_contains", "path": "validator.py", "text": "validate_email"},
+      {"type": "shell_output_contains", "command": "python test_validator.py", "text": "ALL TESTS PASSED"}
+    ],
+    "max_steps": 12,
+    "cleanup": ["validator.py", "test_validator.py"]
+  },
+  {
+    "id": "ambiguous_spec_infer",
+    "category": "reasoning",
+    "difficulty": "hard",
+    "description": "The file 'spec.md' describes a function incompletely. Read it, infer the missing behaviour from context and examples, implement 'roman.py' with the function described, and verify it passes the embedded examples. Document your assumptions in a comment at the top of roman.py.",
+    "setup": {
+      "files": {
+        "spec.md": "# Roman Numeral Converter\n\nImplement `to_roman(n)` that converts a positive integer to a Roman numeral string.\n\nExamples (from the spec):\n- to_roman(1) -> 'I'\n- to_roman(4) -> 'IV'\n- to_roman(9) -> 'IX'\n- to_roman(14) -> 'XIV'\n- to_roman(40) -> 'XL'\n- to_roman(90) -> 'XC'\n- to_roman(399) -> 'CCCXCIX'\n- to_roman(1994) -> 'MCMXCIV'\n\nNote: Input range is 1 to 3999. Behaviour outside this range is unspecified.\n"
+      }
+    },
+    "checks": [
+      {"type": "file_exists", "path": "roman.py"},
+      {"type": "file_contains", "path": "roman.py", "text": "to_roman"},
+      {"type": "shell_output_contains", "command": "python -c \"from roman import to_roman; results = [to_roman(1),to_roman(4),to_roman(9),to_roman(1994)]; print('OK' if results==['I','IV','IX','MCMXCIV'] else f'FAIL:{results}')\"", "text": "OK"}
+    ],
+    "max_steps": 12,
+    "cleanup": ["roman.py", "spec.md"]
+  },
+  {
+    "id": "code_comprehension_trace",
+    "category": "reasoning",
+    "difficulty": "medium",
+    "description": "WITHOUT running 'trace_me.py', read the code and manually trace through it to determine the final output. Write the predicted output to 'prediction.txt', then run the file and write the actual output to 'actual.txt'. Finally write 'verdict.txt' containing either 'CORRECT' or 'INCORRECT: <explanation>'.",
+    "setup": {
+      "files": {
+        "trace_me.py": "def transform(x):\n    if x % 3 == 0 and x % 5 == 0:\n        return 'FizzBuzz'\n    elif x % 3 == 0:\n        return 'Fizz'\n    elif x % 5 == 0:\n        return 'Buzz'\n    else:\n        return str(x)\n\nresult = [transform(i) for i in range(1, 16)]\nprint(' '.join(result))\n"
+      }
+    },
+    "checks": [
+      {"type": "file_exists", "path": "prediction.txt"},
+      {"type": "file_exists", "path": "actual.txt"},
+      {"type": "file_exists", "path": "verdict.txt"},
+      {"type": "file_contains", "path": "actual.txt", "text": "FizzBuzz"},
+      {"type": "file_contains", "path": "verdict.txt", "text": "CORRECT"}
+    ],
+    "max_steps": 10,
+    "cleanup": ["trace_me.py", "prediction.txt", "actual.txt", "verdict.txt"]
+  },
+  {
+    "id": "constrained_budget_task",
+    "category": "reasoning",
+    "difficulty": "hard",
+    "description": "You have a maximum of 5 tool calls to complete this task. Create a Python script 'fib.py' that prints the first 10 Fibonacci numbers (1 1 2 3 5 8 13 21 34 55), one per line. Be efficient — plan before you act, then execute in as few steps as possible.",
+    "setup": {},
+    "checks": [
+      {"type": "file_exists", "path": "fib.py"},
+      {"type": "shell_output_contains", "command": "python fib.py", "text": "55"},
+      {"type": "shell_output_contains", "command": "python fib.py", "text": "1"}
+    ],
+    "max_steps": 5,
+    "cleanup": ["fib.py"]
+  },
+  {
+    "id": "iterative_refinement",
+    "category": "compound",
+    "difficulty": "hard",
+    "description": "The file 'draft.py' contains a working but inefficient implementation of `find_duplicates(lst)`. It works correctly but uses O(n²) nested loops. Rewrite it to be more efficient. Write a 'benchmark.py' that times both the old and new versions on a list of 10,000 items, and write 'results.txt' with the timing comparison. The new version must be at least 2x faster.",
+    "setup": {
+      "files": {
+        "draft.py": "def find_duplicates(lst):\n    \"\"\"Return a list of elements that appear more than once.\"\"\"\n    duplicates = []\n    for i in range(len(lst)):\n        for j in range(i + 1, len(lst)):\n            if lst[i] == lst[j] and lst[i] not in duplicates:\n                duplicates.append(lst[i])\n    return sorted(duplicates)\n\nif __name__ == '__main__':\n    test = [1, 2, 3, 2, 4, 3, 5]\n    print(find_duplicates(test))  # [2, 3]\n"
+      }
+    },
+    "checks": [
+      {"type": "file_exists", "path": "draft.py"},
+      {"type": "file_exists", "path": "benchmark.py"},
+      {"type": "file_exists", "path": "results.txt"},
+      {"type": "shell_output_contains", "command": "python draft.py", "text": "[2, 3]"},
+      {"type": "shell_output_contains", "command": "python benchmark.py", "text": "faster"}
+    ],
+    "max_steps": 15,
+    "cleanup": ["draft.py", "benchmark.py", "results.txt"]
+  },
+  {
+    "id": "dependency_resolution",
+    "category": "compound",
+    "difficulty": "hard",
+    "description": "Read the four Python files in the workspace. They have import dependencies between them. Some are broken because files import from each other in a circular way or import things that don't exist. Diagnose the dependency graph, fix the circular import, and ensure 'python main_app.py' prints 'System OK'.",
+    "setup": {
+      "files": {
+        "main_app.py": "from app_core import run_system\n\nif __name__ == '__main__':\n    run_system()\n",
+        "app_core.py": "from data_layer import get_data\nfrom utils import format_output\n\ndef run_system():\n    data = get_data()\n    print(format_output(data))\n",
+        "data_layer.py": "from app_core import run_system  # circular import bug\n\ndef get_data():\n    return {'status': 'OK', 'value': 42}\n",
+        "utils.py": "def format_output(data):\n    return f\"System {data['status']}\"\n"
+      }
+    },
+    "checks": [
+      {"type": "file_exists", "path": "main_app.py"},
+      {"type": "shell_output_contains", "command": "python main_app.py", "text": "System OK"}
+    ],
+    "max_steps": 12,
+    "cleanup": ["main_app.py", "app_core.py", "data_layer.py", "utils.py"]
+  },
+  {
+    "id": "schema_migration",
+    "category": "data_transform",
+    "difficulty": "hard",
+    "description": "You have 'users_v1.json' in the old schema. Write 'migrate.py' that converts it to the new schema described in 'schema_v2.md' and writes the result to 'users_v2.json'. The migration must be lossless — no data should be dropped, only restructured.",
+    "setup": {
+      "files": {
+        "users_v1.json": "[{\"id\": 1, \"full_name\": \"Alice Smith\", \"email\": \"alice@test.com\", \"age\": 30, \"city\": \"NYC\", \"country\": \"US\"}, {\"id\": 2, \"full_name\": \"Bob Jones\", \"email\": \"bob@test.com\", \"age\": 25, \"city\": \"LA\", \"country\": \"US\"}, {\"id\": 3, \"full_name\": \"Carol Wu\", \"email\": \"carol@test.com\", \"age\": 35, \"city\": \"London\", \"country\": \"UK\"}]",
+        "schema_v2.md": "# Schema v2\n\nEach user object must have:\n- `id` (unchanged)\n- `name`: object with `first` and `last` (split from full_name on first space)\n- `contact`: object with `email` (unchanged)\n- `profile`: object with `age` (unchanged) and `location`: object with `city` and `country`\n\nExample:\n```json\n{\n  \"id\": 1,\n  \"name\": {\"first\": \"Alice\", \"last\": \"Smith\"},\n  \"contact\": {\"email\": \"alice@test.com\"},\n  \"profile\": {\"age\": 30, \"location\": {\"city\": \"NYC\", \"country\": \"US\"}}\n}\n```\n"
+      }
+    },
+    "checks": [
+      {"type": "file_exists", "path": "migrate.py"},
+      {"type": "file_exists", "path": "users_v2.json"},
+      {"type": "file_contains", "path": "users_v2.json", "text": "\"first\""},
+      {"type": "file_contains", "path": "users_v2.json", "text": "\"last\""},
+      {"type": "file_contains", "path": "users_v2.json", "text": "\"location\""},
+      {"type": "file_contains", "path": "users_v2.json", "text": "Alice"},
+      {"type": "shell_output_contains", "command": "python migrate.py", "text": ""}
+    ],
+    "max_steps": 12,
+    "cleanup": ["users_v1.json", "schema_v2.md", "migrate.py", "users_v2.json"]
+  }
+]
