@@ -87,6 +87,25 @@ def build_system_prompt(affirmation: AffirmationSystem | None = None) -> str:
     except Exception:
         pass
 
+    # Build constitution governance section
+    constitution_prompt = ""
+    try:
+        from experimenter import load_constitution
+        const = load_constitution()
+        rules = []
+        # Pull negative imperatives as hard rules
+        for k, v in const.get("negative_imperatives", {}).items():
+            desc = v.get("description", "") if isinstance(v, dict) else str(v)
+            if desc:
+                rules.append(f"- NEVER: {desc.strip()}")
+        # Pull permissions deny list
+        for perm in const.get("permissions", {}).get("deny", []):
+            rules.append(f"- BLOCKED: {perm}")
+        if rules:
+            constitution_prompt = "\n## Governance Rules (from constitution)\n" + "\n".join(rules)
+    except Exception:
+        pass
+
     return textwrap.dedent(f"""
         You are an autonomous AI agent that works by reading and writing files.
 
@@ -114,6 +133,7 @@ def build_system_prompt(affirmation: AffirmationSystem | None = None) -> str:
         {constitution_prompt}
         {reflection_prompt}
     """).strip()
+
 
 
 # ---------------------------------------------------------------------------
